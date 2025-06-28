@@ -46,8 +46,7 @@ const Login = () => {
       // Use proper URLs with success/failure callbacks
       await account.createOAuth2Session(
         "google", 
-        `${window.location.origin}/?success=true`,  // Success URL
-        `${window.location.origin}/?error=true`     // Failure URL
+       "https://hostlecartkanpur.vercel.app/login"   // Failure URL
       );
     } catch (error) {
       console.error("Error logging in with Google:", error);
