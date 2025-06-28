@@ -5,7 +5,8 @@ import { account } from "../services/Appwriteconfig";
 const Login = () => {
   const loginWithGoogle = async () => {
     try {
-      await account.createOAuth2Session("google", "https://hostlecartkanpur.vercel.app/login");
+      await account.createOAuth2Session("google", 'https://hostlecartkanpur.vercel.app/',  // Success redirect
+    'https://hostlecartkanpur.vercel.app/login');
     } catch (error) {
       console.error("Error logging in with Google:", error);
     }
