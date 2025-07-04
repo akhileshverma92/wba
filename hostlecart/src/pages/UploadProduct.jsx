@@ -153,7 +153,12 @@ const UploadProduct = () => {
           createdAt: new Date().toISOString(),
           userId: user.id,
           status: 'pending'
-        }
+        },
+         [
+          Permission.read(Role.user(user.id)),
+          Permission.update(Role.user(user.id)),
+          Permission.delete(Role.user(user.id))
+        ]
       );
 
       setSubmitMessage('✅ Product uploaded successfully! It will be visible after admin approval.');
