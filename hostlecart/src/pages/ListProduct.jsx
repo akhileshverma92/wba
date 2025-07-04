@@ -28,8 +28,6 @@ import {
 } from 'lucide-react';
 
 // Initialize Appwrite
-const { user } = useUser();
-
 
 const client = new Client()
   .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
@@ -80,7 +78,8 @@ const ListProducts = () => {
           DATABASE_ID,
           COLLECTION_ID,
           [
-            Query.equal("email", user.primaryEmailAddress?.emailAddress),
+
+            
             Query.orderDesc('$createdAt'),
             Query.limit(100) // Adjust as needed
           ]
