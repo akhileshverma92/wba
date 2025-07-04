@@ -7,7 +7,7 @@ const Login = () => {
     try {
       await account.createOAuth2Session("google",'google',
                 "https://hostlecartkanpur.vercel.app/",
-                "https://hostlecartkanpur.vercel.app/login" ;
+                "https://hostlecartkanpur.vercel.app/login" );
     } catch (error) {
       console.error("Error logging in with Google:", error);
     }
