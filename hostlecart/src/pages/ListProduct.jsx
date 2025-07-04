@@ -79,8 +79,8 @@ const ListProducts = () => {
           COLLECTION_ID,
           [
 
-            Query.equal("status", ["approved"]),
             Query.orderDesc('$createdAt'),
+            
             Query.limit(100) // Adjust as needed
           ]
         );
