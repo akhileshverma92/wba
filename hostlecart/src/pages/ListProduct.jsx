@@ -68,13 +68,14 @@ const ListProducts = () => {
       try {
         setLoading(true);
         setError('');
+
         
         // Only fetch approved products for public listing
         const response = await databases.listDocuments(
           DATABASE_ID,
           COLLECTION_ID,
           [
-            Query.equal('status', 'approved'),
+            Query.equal("email", user.primaryEmailAddress?.emailAddress),
             Query.orderDesc('$createdAt'),
             Query.limit(100) // Adjust as needed
           ]
