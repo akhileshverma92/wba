@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Client, Databases, Storage, Query } from 'appwrite';
+import { useUser } from '@clerk/clerk-react';
+
 import { 
   Search, 
   Filter, 
@@ -26,6 +28,9 @@ import {
 } from 'lucide-react';
 
 // Initialize Appwrite
+const { user } = useUser();
+
+
 const client = new Client()
   .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
   .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
