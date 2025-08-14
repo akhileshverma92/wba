@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useUser } from '@clerk/clerk-react';
-import { Client, Databases, Storage, ID } from 'appwrite';
+import { Client, Databases, Storage, Account, ID } from 'appwrite';
 import { Upload, Package, DollarSign, Phone, MapPin, User, Tag, CheckSquare, Image, Clock } from 'lucide-react';
 
-// Initialize Appwrite (keeping for database and storage)
+// Initialize Appwrite
 const client = new Client()
   .setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
   .setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
 
 const databases = new Databases(client);
 const storage = new Storage(client);
+const account = new Account(client);
 
 // Constants
 const DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID;
@@ -17,8 +17,9 @@ const COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID;
 const BUCKET_ID = "6856b1b200278223aed4";
 
 const UploadProduct = () => {
-  const { user, isLoaded } = useUser(); // Clerk hook for user authentication
-  
+  const [currentUser, setCurrentUser] = useState(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
   const [formData, setFormData] = useState({
     productName: '',
     category: '',
@@ -40,20 +41,21 @@ const UploadProduct = () => {
     'Electronics', 'Clothing', 'Home & Garden', 'Sports', 'Books', 
     'Automotive', 'Toys', 'Health & Beauty', 'Furniture', 'Other'
   ];
-
   const conditions = ['New', 'Like New', 'Good', 'Fair', 'Poor'];
 
-  // Pre-fill seller name from Clerk user data
+  // Fetch logged-in user from Appwrite
   useEffect(() => {
-    if (user && !formData.sellerName) {
-      setFormData(prev => ({
-        ...prev,
-        sellerName: user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.username || user.emailAddresses[0]?.emailAddress || ''
-      }));
-    }
-  }, [user]);
+    account.get()
+      .then(user => {
+        setCurrentUser(user);
+        setFormData(prev => ({
+          ...prev,
+          sellerName: user.name || user.email
+        }));
+      })
+      .catch(() => setCurrentUser(null))
+      .finally(() => setIsUserLoading(false));
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -73,18 +75,15 @@ const UploadProduct = () => {
 
     try {
       for (const file of files) {
-        // Create preview URL
         const previewUrl = URL.createObjectURL(file);
         newPreviewUrls.push(previewUrl);
 
-        // Upload to Appwrite Storage
         const response = await storage.createFile(
           BUCKET_ID,
           ID.unique(),
           file
         );
 
-        // Get the file URL
         const fileUrl = storage.getFileView(BUCKET_ID, response.$id);
         newImageUrls.push(fileUrl.toString());
       }
@@ -131,7 +130,7 @@ const UploadProduct = () => {
       return false;
     }
 
-    if (!user) {
+    if (!currentUser) {
       setSubmitMessage('You must be logged in to upload products');
       return false;
     }
@@ -146,7 +145,6 @@ const UploadProduct = () => {
     setSubmitMessage('');
 
     try {
-      // Create product document in Appwrite database with 'pending' status
       await databases.createDocument(
         DATABASE_ID,
         COLLECTION_ID,
@@ -162,23 +160,20 @@ const UploadProduct = () => {
           negotiable: formData.negotiable,
           images: formData.images,
           createdAt: new Date().toISOString(),
-          userId: user.id, // Using Clerk user ID
-          userEmail: user.emailAddresses[0]?.emailAddress || '',
-          status: 'pending' // Set status to pending for admin approval
+          userId: currentUser.$id,
+          userEmail: currentUser.email,
+          status: 'pending'
         }
       );
 
       setSubmitMessage('Product uploaded successfully! It will be visible after admin approval.');
       
-      // Reset form
       setFormData({
         productName: '',
         category: '',
         condition: '',
         contactNumber: '',
-        sellerName: user.firstName && user.lastName 
-          ? `${user.firstName} ${user.lastName}` 
-          : user.username || user.emailAddresses[0]?.emailAddress || '',
+        sellerName: currentUser.name || currentUser.email,
         address: '',
         price: '',
         negotiable: false,
@@ -194,8 +189,8 @@ const UploadProduct = () => {
     }
   };
 
-  // Show loading state if Clerk is still loading
-  if (!isLoaded) {
+  // Loading state while checking user session
+  if (isUserLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
@@ -203,8 +198,8 @@ const UploadProduct = () => {
     );
   }
 
-  // Show message if user is not authenticated (this should be handled by ProtectedRoute)
-  if (!user) {
+  // If not logged in
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
         <div className="text-center">
@@ -226,7 +221,7 @@ const UploadProduct = () => {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Upload Product</h1>
             <p className="text-gray-600">Add your product to the marketplace</p>
             <p className="text-sm text-indigo-600 mt-2">
-              Welcome, {user.firstName || user.username || user.emailAddresses[0]?.emailAddress}
+              Welcome, {currentUser.name || currentUser.email}
             </p>
           </div>
 
